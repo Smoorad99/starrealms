@@ -1,24 +1,18 @@
 import typing as tp
 
-from starrealms.action import Action
-from starrealms.card import Card
-from starrealms.game import Game
-from starrealms.player import Player
-
-
-def render_card(card: Card):
+def render_card(card):
     string = card.name
     # TODO: handle bases and outposts
     return string
 
 
-def render_trade_row_card(card: Card):
+def render_trade_row_card(card):
     # Render card with cost in yellow
     string = f"{render_card(card)}(\033[1m\033[93m{card.cost}\033[0m)"
     return string
 
 
-def render_trade_row(game: Game):
+def render_trade_row(game):
     # Render the trade row
     string = "\033[1mTrade Row:\033[0m "
     for card in game.trade_row:
@@ -26,14 +20,14 @@ def render_trade_row(game: Game):
     return string
 
 
-def render_hand(player: Player):
+def render_hand(player):
     string = "\033[1mHand   :\033[0m "
     for card in player.hand:
         string += render_card(card) + ", "
     return string
 
 
-def render_player(player: Player):
+def render_player(player):
     # Show player name in bold blue underlinee with name in uppercase
     string = f"\033[1m\033[4m\033[94m{player.name.upper()}\033[0m"
     # Show player authority, trade and combat next to name (authority, combat, trade),
@@ -52,7 +46,7 @@ def render_player(player: Player):
     return string
 
 
-def render_action(action: Action):
+def render_action(action):
     # Render name of action class
     string = f"\033[1m\033[97m{action.__class__.__name__}\033[0m"
     # Render card name if action has a card attribute
@@ -61,7 +55,7 @@ def render_action(action: Action):
     return string
 
 
-def render_actions_with_keys(key_action_map: tp.Dict[str, Action]):
+def render_actions_with_keys(key_action_map):
     # Render the actions in a numbered list
     string = ""
     for key, action in key_action_map.items():
@@ -69,7 +63,7 @@ def render_actions_with_keys(key_action_map: tp.Dict[str, Action]):
     return string
 
 
-def render(game: Game, actions: Action, key_action_map: tp.Dict[str, Action]):
+def render(game, actions, key_action_map):
     # Render the turn number in bold white cabital letters
     # Clear the terminal screen and go to top
     # print("\033[2J")

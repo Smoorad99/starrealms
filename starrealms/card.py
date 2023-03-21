@@ -28,7 +28,7 @@ class Card:
         return f"{self.name}({self.cost})"
 
     def __repr__(self):
-        return self.__str__()
+        return f"{self.name}(cost:{self.cost}, type:{self.type.name}, abilities:{self.abilities}, scrap_abilities:{self.scrap_abilities})"
 
 
 def new(card: Card):

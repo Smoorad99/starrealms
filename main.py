@@ -1,10 +1,11 @@
-from starrealms.agents import human_tui, random_play
+from agents import HumanAgent, RandomAgent, GPTAgent
 from starrealms.game import Game
 from starrealms.player import Player
 
 if __name__ == "__main__":
-    player1 = Player("Player", human_tui)
-    player2 = Player("Ran Doe", random_play)
+    player1 = Player("Player", HumanAgent())
+    # player2 = Player("Ran Doe", random_play)
+    player2 = Player("GPT", GPTAgent())
     game = Game(player1, player2)
     print("Starting Game")
     game.play()

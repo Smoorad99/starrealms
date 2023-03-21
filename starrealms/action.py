@@ -33,6 +33,9 @@ class PlayCard(Action):
             if ability == CardAbility.COMBAT:
                 player.combat += value
 
+    def __repr__(self) -> str:
+        return f"PlayCard({self.card.__repr__()})"
+
 
 class BuyCard(Action):
     def __init__(self, card: Card):
@@ -42,6 +45,9 @@ class BuyCard(Action):
         game.trade_row.remove(self.card)
         player.discard.append(self.card)
         player.trade -= self.card.cost
+
+    def __repr__(self) -> str:
+        return f"ScrapCard({self.card.__repr__()})"
 
 
 class ScrapCard(Action):
@@ -65,7 +71,13 @@ class ScrapCard(Action):
         else:
             game.scrap_pile.append(self.card)
 
+    def __repr__(self) -> str:
+        return f"ScrapCard({self.card.__repr__()})"
+
 
 class EndTurn(Action):
     def apply(self, game, player):
         player.end_turn()
+
+    def __repr__(self) -> str:
+        return "EndTurn()"

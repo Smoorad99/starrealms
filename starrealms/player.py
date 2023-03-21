@@ -4,6 +4,7 @@ import typing as tp
 
 from starrealms.action import Action, BuyCard, EndTurn, PlayCard, ScrapCard
 from starrealms.card import Card, Explorer, Scout, Viper, new
+from starrealms.agent import Agent
 
 STARTING_AUTHORITY = 50
 STARTING_SCOUTS = 8
@@ -14,7 +15,7 @@ class Player:
     def __init__(
         self,
         name: str,
-        select_action_callback: tp.Callable,
+        agent: Agent,
     ) -> None:
         """
         Store and control the player state
@@ -34,7 +35,7 @@ class Player:
         self.discard: tp.List[Card] = []
         self.play_area: tp.List[Card] = []
         self.is_done: bool = True
-        self.select_action: tp.Callable = select_action_callback
+        self.select_action: tp.Callable = agent.play
         self.moves: int = 0
 
         random.shuffle(self.deck)
