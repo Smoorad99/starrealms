@@ -3,6 +3,7 @@ import random
 import typing as tp
 
 from starrealms.action import Action, BuyCard, EndTurn, PlayCard, ScrapCard
+from starrealms.agent import Agent
 from starrealms.card import Card, Explorer, Scout, Viper, new
 from starrealms.agent import Agent
 
