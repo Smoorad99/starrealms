@@ -1,8 +1,6 @@
 """Starrealms action module"""
 from enum import Enum
 
-from starrealms.card import Card, CardAbility
-
 
 class ActionType(Enum):
     PLAY = "play"
@@ -12,33 +10,26 @@ class ActionType(Enum):
 
 
 class Action:
-    card = None
-
     def apply(self, game, player):
         pass
 
 
 class PlayCard(Action):
-    def __init__(self, card: Card):
+    def __init__(self, card):
         self.card = card
 
     def apply(self, game, player):
         player.hand.remove(self.card)
         player.play_area.append(self.card)
 
-        # If card has trade ability add trade points to player
-        for ability, value in self.card.abilities.items():
-            if ability == CardAbility.TRADE:
-                player.trade += value
-            if ability == CardAbility.COMBAT:
-                player.combat += value
+        self.card.ability.use(game, player)
 
     def __repr__(self) -> str:
         return f"PlayCard({self.card.__repr__()})"
 
 
 class BuyCard(Action):
-    def __init__(self, card: Card):
+    def __init__(self, card):
         self.card = card
 
     def apply(self, game, player):
@@ -51,19 +42,15 @@ class BuyCard(Action):
 
 
 class ScrapCard(Action):
-    def __init__(self, card: Card):
+    def __init__(self, card):
         self.card = card
 
     def apply(self, game, player):
         player.play_area.remove(self.card)
 
         # Handle scrap abilities
-        if self.card.scrap_abilities:
-            for ability, value in self.card.scrap_abilities.items():
-                if ability == CardAbility.TRADE:
-                    player.trade += value
-                if ability == CardAbility.COMBAT:
-                    player.combat += value
+        if self.card.scrap_ability:
+            self.card.scrap_ability.use(game, player)
 
         # If this is an explorer add it back to the trade row
         if self.card.name == "Explorer":
@@ -73,6 +60,28 @@ class ScrapCard(Action):
 
     def __repr__(self) -> str:
         return f"ScrapCard({self.card.__repr__()})"
+
+
+class DrawCard(Action):
+    def __init__(self, card):
+        self.card = card
+
+    def apply(self, game, player):
+        player.draw_cards(1)
+
+    def __repr__(self) -> str:
+        return f"DrawCard({self.card.__repr__()})"
+
+
+class AllyAbility(Action):
+    def __init__(self, card):
+        self.card = card
+
+    def apply(self, game, player):
+        self.card.ally_ability.use(game, player)
+
+    def __repr__(self) -> str:
+        return f"AllyAbility({self.card}-{self.card.ally_ability.__repr__()})"
 
 
 class EndTurn(Action):
