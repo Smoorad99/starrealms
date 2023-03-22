@@ -2,10 +2,10 @@
 import random
 import typing as tp
 
-from starrealms.action import Action, BuyCard, EndTurn, PlayCard, ScrapCard
+from starrealms.action import (Action, AllyAbility, BuyCard, EndTurn, PlayCard,
+                               ScrapCard)
 from starrealms.agent import Agent
-from starrealms.card import Card, Explorer, Scout, Viper, new
-from starrealms.agent import Agent
+from starrealms.card import Card, CardAbility, Explorer, Scout, Viper, new
 
 STARTING_AUTHORITY = 50
 STARTING_SCOUTS = 8
@@ -36,7 +36,8 @@ class Player:
         self.discard: tp.List[Card] = []
         self.play_area: tp.List[Card] = []
         self.is_done: bool = True
-        self.select_action: tp.Callable = agent.play
+        if agent:
+            self.select_action: tp.Callable = agent.play
         self.moves: int = 0
 
         random.shuffle(self.deck)
@@ -54,12 +55,24 @@ class Player:
         """Return a list of valid actions for the player"""
         actions: tp.List[Action] = []
 
+        # Make a list of factions currently in play
+        factions_in_play: tp.List[str] = []
+        for card in self.play_area:
+            if card.faction not in factions_in_play:
+                factions_in_play.append(card.faction)
+
         for card in self.hand:
             actions.append(PlayCard(card))
 
         for card in self.play_area:
-            if card.scrap_abilities:
+            if card.scrap_ability:
                 actions.append(ScrapCard(card))
+            if (
+                card.ally_ability
+                and not card.ally_ability.played
+                and card.faction in factions_in_play
+            ):
+                actions.append(AllyAbility(card))
 
         actions.append((EndTurn()))
 
@@ -81,6 +94,11 @@ class Player:
         self.discard += self.play_area
         self.hand = []
         self.play_area = []
+
+        # Reset all card abilities
+        for card in self.discard:
+            if card.ally_ability:
+                card.ally_ability.played = False
 
         # Discard rest of trade and reset combat
         self.trade = 0

@@ -50,7 +50,7 @@ def render_action(action):
     # Render name of action class
     string = f"\033[1m\033[97m{action.__class__.__name__}\033[0m"
     # Render card name if action has a card attribute
-    if action.card:
+    if hasattr(action, "card"):
         string += f" {render_card(action.card)}"
     return string
 
