@@ -51,32 +51,6 @@ class Player:
             card = self.deck.pop(0)
             self.hand.append(card)
 
-    def valid_actions(self) -> tp.List[Action]:
-        """Return a list of valid actions for the player"""
-        actions: tp.List[Action] = []
-
-        # Make a list of factions currently in play
-        factions_in_play: tp.List[str] = []
-        for card in self.play_area:
-            if card.faction not in factions_in_play:
-                factions_in_play.append(card.faction)
-
-        for card in self.hand:
-            actions.append(PlayCard(card))
-
-        for card in self.play_area:
-            if card.scrap_ability:
-                actions.append(ScrapCard(card))
-            if (
-                card.ally_ability
-                and not card.ally_ability.played
-                and card.faction in factions_in_play
-            ):
-                actions.append(AllyAbility(card))
-
-        actions.append((EndTurn()))
-
-        return actions
 
     def start_turn(self) -> None:
         """Start the player's turn"""
@@ -97,8 +71,15 @@ class Player:
 
         # Reset all card abilities
         for card in self.discard:
-            if card.ally_ability:
-                card.ally_ability.played = False
+            for ability in card.abilities:
+                ability.played = False
+            if card.ally_abilities:
+                for ability in card.ally_abilities:
+                    ability.played = False
+            if card.scrap_abilities:
+                for ability in card.scrap_abilities:
+                    ability.played = False
+
 
         # Discard rest of trade and reset combat
         self.trade = 0

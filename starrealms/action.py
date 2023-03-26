@@ -22,10 +22,77 @@ class PlayCard(Action):
         player.hand.remove(self.card)
         player.play_area.append(self.card)
 
-        self.card.ability.use(game, player)
+        for ability in self.card.abilities:
+            ability.use(game, player)
 
-    def __repr__(self) -> str:
-        return f"PlayCard({self.card.__repr__()})"
+    def __str__(self) -> str:
+        return f"PlayCard({self.card})"
+
+class ScrapTraderow(Action):
+    def __init__(self, action, traderow_card):
+        self.action = action 
+        self.traderow_card = traderow_card
+
+    def apply(self, game, player):
+        # Scrap the trade row card
+        card = game.trade_row.pop(game.trade_row.index(self.traderow_card))
+        game.scrap_pile.append(card)
+        game.draw_traderow_cards(1)
+
+    #def __str__(self) -> str:
+    #    return f"ScrapTraderow({self.action}-{self.action.card}: {self.traderow_card})"
+
+
+# Special action for cards that can scrap trade row cards in their main ability
+# These actions are created during gameplay as needed
+class PlayCardScrapTraderow(Action):
+    def __init__(self, action, traderow_card):
+        self.action = action 
+        self.traderow_card = traderow_card
+
+    def apply(self, game, player):
+        player.hand.remove(self.action.card)
+        player.play_area.append(self.action.card)
+
+        for ability in self.action.card.abilities:
+            ability.use(game, player)
+
+        # Scrap the trade row card
+        card = game.trade_row.pop(game.trade_row.index(self.traderow_card))
+        game.scrap_pile.append(card)
+        game.draw_traderow_cards(1)
+
+    def __str__(self) -> str:
+        return f"PlayCardScrapTraderow({self.action}: {self.traderow_card})"
+
+
+class AcquireShip(Action):
+    def __init__(self, action, traderow_card):
+        self.action = action 
+        self.traderow_card = traderow_card
+
+    def apply(self, game, player):
+        # Place the card ontop of the player deck 
+        card = game.trade_row.pop(game.trade_row.index(self.traderow_card))
+        # The card should be the first card to be drawn when calling pop
+        player.deck.insert(0, self.traderow_card)
+        game.draw_traderow_cards(1)
+
+    def __str__(self) -> str:
+        return f"AcquireShip({self.action}: {self.traderow_card})"
+
+
+class DestroyBase(Action):
+    def __init__(self, card, base_card):
+        self.card = card
+        self.base = base_card
+
+    def apply(self, game, player):
+        game.opponent.bases.remove(self.base)
+        game.opponent.discard(self.base)
+
+    def __str__(self) -> str:
+        return f"DestroyBase({self.card()}: {self.base()})"
 
 
 class BuyCard(Action):
@@ -36,9 +103,10 @@ class BuyCard(Action):
         game.trade_row.remove(self.card)
         player.discard.append(self.card)
         player.trade -= self.card.cost
+        game.draw_traderow_cards(1)
 
-    def __repr__(self) -> str:
-        return f"ScrapCard({self.card.__repr__()})"
+    def __str__(self) -> str:
+        return f"BuyCard({self.card})"
 
 
 class ScrapCard(Action):
@@ -49,8 +117,8 @@ class ScrapCard(Action):
         player.play_area.remove(self.card)
 
         # Handle scrap abilities
-        if self.card.scrap_ability:
-            self.card.scrap_ability.use(game, player)
+        for ability in self.card.scrap_abilities:
+            ability.use(game, player)
 
         # If this is an explorer add it back to the trade row
         if self.card.name == "Explorer":
@@ -58,8 +126,8 @@ class ScrapCard(Action):
         else:
             game.scrap_pile.append(self.card)
 
-    def __repr__(self) -> str:
-        return f"ScrapCard({self.card.__repr__()})"
+    def __str__(self) -> str:
+        return f"ScrapCard({self.card})"
 
 
 class DrawCard(Action):
@@ -69,8 +137,8 @@ class DrawCard(Action):
     def apply(self, game, player):
         player.draw_cards(1)
 
-    def __repr__(self) -> str:
-        return f"DrawCard({self.card.__repr__()})"
+    def __str__(self) -> str:
+        return f"DrawCard({self.card()})"
 
 
 class AllyAbility(Action):
@@ -78,15 +146,16 @@ class AllyAbility(Action):
         self.card = card
 
     def apply(self, game, player):
-        self.card.ally_ability.use(game, player)
+        for ability in self.card.ally_abilities:
+            ability.use(game, player)
 
-    def __repr__(self) -> str:
-        return f"AllyAbility({self.card}-{self.card.ally_ability.__repr__()})"
+    def __str__(self) -> str:
+        return f"AllyAbilitty({self.card}-{self.card.ally_abilities})"
 
 
 class EndTurn(Action):
     def apply(self, game, player):
         player.end_turn()
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return "EndTurn()"

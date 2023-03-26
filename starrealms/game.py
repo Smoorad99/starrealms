@@ -1,8 +1,8 @@
 import random
 import typing as tp
 
-from starrealms.action import BuyCard
-from starrealms.card import Card, Explorer, new
+from starrealms.action import AcquireShip, AllyAbility, ScrapCard, EndTurn, PlayCard, BuyCard, PlayCardScrapTraderow, ScrapTraderow, DestroyBase
+from starrealms.card import Card, CardType, CardFaction, CardAbility, Explorer, new, create_blob_deck
 from starrealms.player import Player
 
 PLAYER1_STARTING_CARDS = 3
@@ -33,13 +33,15 @@ class Game:
         self.current_player: Player = self.players[self.current_player_idx]
         self.opponent: Player = self.players[1 - self.current_player_idx]
 
-        # Players draw their initial cards
+        # Draw initial cards 
+        self.draw_traderow_cards(5)
         player1.draw_cards(PLAYER1_STARTING_CARDS)
         player2.draw_cards(PLAYER2_STARTING_CARDS)
 
     def initialize_game_state(self):
         """Initialize the game state by setting up the draw pile and traderow"""
-        self.draw_pile = []
+        self.draw_pile = create_blob_deck()
+        random.shuffle(self.draw_pile)
         self.trade_row = [new(Explorer) for _ in range(10)]
 
     def tick(self):
@@ -81,15 +83,88 @@ class Game:
         """Return a list of valid actions for the player regarding the traderow"""
         actions = []
 
-        # Purchase cards from trade row
+        # Get a count for how many of each faction is in play
+        faction_counts = {faction: 0 for faction in CardFaction}
+        for card in player.play_area:
+            faction_counts[card.faction] += 1
+
+        # Add purchase card actions from trade row
         for card in self.trade_row:
             # Check if the card is affordable
             if card.cost <= player.trade:
                 actions.append(BuyCard(card))
 
-        actions += player.valid_actions()
+        # Add hand play card actions
+        for card in player.hand:
+            actions.append(PlayCard(card))
+
+        # Check if a hand PlayCard action has a SCRAP_TRADEROW ability
+        # In this case we need to expand the PlayCard action
+        # into additional PlayCardTradRowScrapActions
+        for action in actions:
+            if isinstance(action, PlayCard):
+                for ability in action.card.abilities:
+                    if ability.ability == CardAbility.SCRAP_TRADEROW:
+                        for traderow_card in self.trade_row:
+                            if traderow_card.name != "Explorer":
+                                actions.append(PlayCardScrapTraderow(action, traderow_card))
+
+        # Add actions for play area cards
+        for card in player.play_area:
+            # Add trash action if this card has the ability 
+            if card.scrap_abilities:
+                actions.append(ScrapCard(card))
+
+            # Add ally abilities actions for cards in play
+            if card.ally_abilities and faction_counts[card.faction] > 1:
+                for ability in card.ally_abilities: 
+                    if not ability.played:
+                        actions.append(AllyAbility(card))
+
+        for action in actions:
+            if isinstance(action, AllyAbility):
+                for ability in action.card.ally_abilities:
+                    # For all SCRAP_TRADEROW abilities in ally abilities, 
+                    # append a ScrapTraderow action
+                    if ability.ability == CardAbility.SCRAP_TRADEROW:
+                        for traderow_card in self.trade_row:
+                            # Cannot trash explorers
+                            if traderow_card.name != "Explorer":
+                                actions.append(ScrapTraderow(action, traderow_card))
+                    # For all ACQUIRE_SHIP abilities in ally abilities, 
+                    # append a AcquireShip action
+                    if ability.ability == CardAbility.ACQUIRE_SHIP:
+                        for traderow_card in self.trade_row:
+                            actions.append(AcquireShip(action, traderow_card))
+        # Remove AllyAbility actions with AcquireShip abilities
+        actions = [action for action in actions if not (isinstance(action, AllyAbility) and any(ability.ability == CardAbility.ACQUIRE_SHIP for ability in action.card.ally_abilities))]
+
+
+        # Check if an action has the DESTROY_BASE ability
+        # We need to add DestroyBase actions to the list for every opponent base
+        #for action in actions:
+        #    if hasattr(action, "card"):
+        #        for ability in action.card.abilities:
+        #            if ability.ability == CardAbility.DESTROY_BASE:
+        #                # For every opponent in play card check if it is of type base
+        #                for opponent_card in self.opponent.in_play:
+        #                    if opponent_card.type == CardType.BASE:
+        #                        actions.append(DestroyBase(action, opponent_card))
+
+        actions.append((EndTurn()))
 
         return actions
+
+    def draw_traderow_cards(self, n: int):
+        """Draw n cards from the traderow"""
+        for _ in range(n):
+            if not self.draw_pile:
+                self.draw_pile = self.scrap_pile
+                self.scrap_pile = []
+                random.shuffle(self.draw_pile)
+            else:
+                self.trade_row.append(self.draw_pile.pop())
+
 
     def check_game_over(self) -> bool:
         """Check if the game is over"""
