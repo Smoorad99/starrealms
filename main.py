@@ -1,11 +1,11 @@
-from agents import GPTAgent, GPTChatAgent, HumanAgent, RandomAgent
+from agents.agents import HumanAgent, RandomAgent
 from starrealms.game import Game
 from starrealms.player import Player
 
 if __name__ == "__main__":
     player1 = Player("Player", HumanAgent())
-    #player2 = Player("Ran Doe", RandomAgent())
-    player2 = Player("GPT", GPTChatAgent())
+    player2 = Player("Ran Doe", RandomAgent())
+    #player2 = Player("GPT", GPTChatAgent())
     game = Game(player1, player2)
     print("Starting Game")
     game.play()
@@ -17,6 +17,7 @@ if __name__ == "__main__":
 # TODO: Provide opponent move list to agent
 # TODO: Provide information on every card to the agent
 # TODO: Add cards
-# TODO: Implement destroy base
+# TODO: Implement destroy outpost 
 # TODO: store a log of the entire game
-# TODO: fix gpt action Scraptraderow action printout
+# FIXME: Scraptraderow might be broken
+

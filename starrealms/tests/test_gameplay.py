@@ -4,7 +4,7 @@ from starrealms.card import Viper, new
 from starrealms.tests.fixtures import game, player1, player2
 from starrealms.player import Player
 from starrealms.game import Game
-#from agents import RandomAgent
+from agents.agents import RandomAgent
 
 
 def test_gamesetup(game):
@@ -165,7 +165,7 @@ def test_combat(game):
     def select_callback(game, valid_actions):
         # Check if hand contains a card
         if len(game.current_player.hand) > 0:
-            return PlayCard(game.current_player.hand[0])
+            return PlayCard(game.current_player.hand[0], game.current_player.hand[0].abilities)
         else:
             return EndTurn()
 
@@ -177,10 +177,10 @@ def test_combat(game):
     # Check that player 2 now has reduced authority
     assert game.player2.authority == 49
 
-#def test_random_play():
-#    """Test that a game can be played to completion"""
-#    player1 = Player("Ran Moe", RandomAgent())
-#    player2 = Player("Ran Doe", RandomAgent())
-#    game = Game(player1, player2)
-#    game.play()
-#    assert True
+def test_random_play():
+    """Test that a game can be played to completion"""
+    player1 = Player("Ran Moe", RandomAgent())
+    player2 = Player("Ran Doe", RandomAgent())
+    game = Game(player1, player2)
+    game.play()
+    assert True

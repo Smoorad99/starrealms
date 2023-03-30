@@ -3,7 +3,7 @@
 import pytest
 
 from starrealms.action import AcquireShip, AllyAbility, EndTurn, PlayCard, ScrapCard, PlayCardScrapTraderow, ScrapTraderow, DestroyBase
-from starrealms.card import Card, CardAbility, BattleBlob, BlobCarrier, BlobDestroyer, Ram, BlobFighter, Explorer, Scout, TradePod, BattlePod, Viper, new
+from starrealms.card import Card, CardAbility, Hive, BlobWorld, BlobWheel, Mothership, BattleBlob, BlobCarrier, BlobDestroyer, Ram, BlobFighter, Explorer, Scout, TradePod, BattlePod, Viper, new
 from starrealms.tests.fixtures import game, player1, player2
 
 
@@ -434,6 +434,22 @@ def test_card_blob_destroyer(game):
     for action in actions:
         if isinstance(action, ScrapTraderow):
             assert action.traderow_card.name != "Explorer"
+
+    # Place a base in the opponent play area 
+    game.player2.play_area = [new(BlobWheel), new(BlobWorld)]
+
+    # Check for destroy base ally ability for the blob wheel and blob wolrd
+    print("Final check")
+    game.player1.combat = 0
+    actions = game.get_valid_actions(game.player1)
+    found_destroy_base = 0
+    for action in actions:
+        if isinstance(action, DestroyBase):
+            if(action.card.name == "Blob Destroyer"):
+                found_destroy_base += 1
+    assert found_destroy_base == 2
+
+
     
 def test_card_battleblob(game):
     """Test the lifecycle of the battleblob card"""
@@ -455,8 +471,6 @@ def test_card_battleblob(game):
 
     # Check that there is only end turn and scrap action available
     actions = game.get_valid_actions(game.player1)
-    for action in actions:
-        print(action)
     assert len(actions) == 2 
 
     # Add another blob to play area
@@ -533,8 +547,6 @@ def test_card_blob_carrier(game):
     game.player1.play_area.append(new(BlobFighter))
 
     actions = game.get_valid_actions(game.player1)
-    for action in actions:
-        print(action)
     # There should be 2 AcquireShip actions, 1 BattleBlob and 1 BlobFighter
     found_explorer = 0
     found_battlepod = 0
@@ -564,3 +576,238 @@ def test_card_blob_carrier(game):
     # Make sure the Explorer is now on top of the player deck
     assert len(game.player1.deck) == 3
     assert game.player1.deck[0].name == "Explorer"
+
+def test_mothership(game):
+    """Test lifecycle of Mothership"""
+    game.player1.start_turn()
+    game.player1.hand = [new(Mothership)]
+    game.player1.deck = [new(Scout), new(Scout)]
+
+    # Play Mothership
+    actions = game.get_valid_actions(game.player1)
+    for action in actions:
+        if isinstance(action, PlayCard):
+            if action.card.name == "Mothership":
+                action.apply(game, game.player1)
+                break
+
+    # Check combat increase
+    assert game.player1.combat == 6 
+
+    # Check that card was drawn
+    assert len(game.player1.hand) == 1 
+    assert game.player1.hand[0].name == "Scout"
+
+    # Add another blob to play area and play mothership ally ability
+    game.player1.play_area.append(new(BlobFighter))
+    actions = game.get_valid_actions(game.player1)
+    for action in actions:
+        if isinstance(action, AllyAbility):
+            if action.card.name == "Mothership":
+                action.apply(game, game.player1)
+                break
+
+    # Check that another card was drawn
+    assert len(game.player1.hand) == 2
+
+def test_card_blob_wheel(game):
+    """Test the lifecycle of the blob wheel"""
+    game.player1.start_turn()
+    game.player1.hand = [new(BlobWheel)]
+    game.player1.deck = [new(Scout), new(Scout)]
+
+    # Play the blob wheel
+    actions = game.get_valid_actions(game.player1)
+    for action in actions:
+        if isinstance(action, PlayCard):
+            if action.card.name == "Blob Wheel":
+                action.apply(game, game.player1)
+                break
+
+    # Check combat increase
+    assert game.player1.combat == 1 
+
+    # Check that the blob wheel is in the play area
+    assert len(game.player1.play_area) == 1
+    assert game.player1.play_area[0].name == "Blob Wheel"
+
+    # When the turn ends, make sure the blob wheel stays in play
+    game.player1.end_turn()
+    game.player1.finalize_turn()
+
+    assert len(game.player1.play_area) == 1
+    assert game.player1.play_area[0].name == "Blob Wheel"
+
+    # Play the blob wheel scrap action 
+    game.player1.start_turn()
+    actions = game.get_valid_actions(game.player1)
+    for action in actions:
+        if isinstance(action, ScrapCard):
+            if action.card.name == "Blob Wheel":
+                action.apply(game, game.player1)
+                break
+
+    # Make sure blobwheel has been scrapped
+    assert len(game.player1.play_area) == 0
+
+    # Make sure trade increased
+    assert game.player1.trade == 3
+
+    
+
+def test_card_hive(game):
+    """Test the lifecycle of the Hive"""
+    game.player1.start_turn()
+    game.player1.hand = [new(Hive)]
+    game.player1.deck = [new(Scout)]
+    
+    # Play the Hive
+    actions = game.get_valid_actions(game.player1)
+    for action in actions:
+        if isinstance(action, PlayCard):
+            if action.card.name == "Hive":
+                action.apply(game, game.player1)
+                break
+
+    # Check combat increase
+    assert game.player1.combat == 3
+
+    # Add another blob to play area and play blob wheel ally ability
+    game.player1.play_area.append(new(BlobFighter))
+    actions = game.get_valid_actions(game.player1)
+    for action in actions:
+        if isinstance(action, AllyAbility):
+            if action.card.name == "Hive":
+                action.apply(game, game.player1)
+                break
+    
+    # Check that a card was drawn
+    assert len(game.player1.hand) == 1
+    assert game.player1.hand[0].name == "Scout"
+
+    # End turn
+    game.player1.end_turn()
+    game.player1.finalize_turn()
+
+    game.player2.combat = 10
+    # Get player2 actions and check if an action is to DestroyBase(Hive)
+    actions = game.get_valid_actions(game.player2)
+    for action in actions:
+        if isinstance(action, DestroyBase):
+            if action.card.name == "Hive":
+                action.apply(game, game.player2)
+                break
+
+    # Check that combat was subtracted
+    assert game.player2.combat == 7
+
+    # Check that card is now in the player disccard pile
+def test_card_hive(game):
+    """Test the lifecycle of the Hive"""
+    game.player1.start_turn()
+    game.player1.hand = [new(Hive)]
+    game.player1.deck = [new(Scout)]
+    
+    # Play the Hive
+    actions = game.get_valid_actions(game.player1)
+    for action in actions:
+        if isinstance(action, PlayCard):
+            if action.card.name == "Hive":
+                action.apply(game, game.player1)
+                break
+
+    # Check combat increase
+    assert game.player1.combat == 3
+
+    # Add another blob to play area and play blob wheel ally ability
+    game.player1.play_area.append(new(BlobFighter))
+    actions = game.get_valid_actions(game.player1)
+    for action in actions:
+        if isinstance(action, AllyAbility):
+            if action.card.name == "Hive":
+                action.apply(game, game.player1)
+                break
+    
+    # Check that a card was drawn
+    assert len(game.player1.hand) == 1
+    assert game.player1.hand[0].name == "Scout"
+
+    print(game.player1.play_area)
+    # End turn
+    game.player1.end_turn()
+    game.player1.finalize_turn()
+    game.opponent = game.player1
+    game.current_player = game.player2
+
+    game.player2.combat = 10
+    # Get player2 actions and check if an action is to DestroyBase(Hive)
+    actions = game.get_valid_actions(game.player2)
+    for action in actions:
+        if isinstance(action, DestroyBase):
+            action.apply(game, game.player2)
+            break
+    else:
+        assert False
+
+    # Check that combat was subtracted
+    assert game.player2.combat == 5 
+    # Check that card is now in the player disccard pile
+    # The blob fighter is already in discard
+    assert len(game.player1.discard) == 3 
+
+def test_card_blob_world(game):
+    """Test lifecycle of blobworld"""
+    game.player1.start_turn()
+    game.player1.hand = [new(BlobFighter), new(BlobWorld)]
+    game.player1.deck = [new(Scout), new(Scout), new(Scout)]
+    
+    # Play blob fighter
+    actions = game.get_valid_actions(game.player1)
+    for action in actions:
+        if isinstance(action, PlayCard):
+            if action.card.name == "Blob Fighter":
+                action.apply(game, game.player1)
+
+    assert len(game.player1.hand) == 1
+    assert game.player1.combat == 2 
+
+    # Check that blob wolrd has a action to draw 2 cards
+    actions = game.get_valid_actions(game.player1)
+    action_count = 0
+    for action in actions:
+        if isinstance(action, PlayCard):
+            if action.card.name == "Blob World":
+                action_count += 1
+    assert action_count == 2 
+
+    # Play blob world combat ability
+    actions = game.get_valid_actions(game.player1)
+    for action in actions:
+        if isinstance(action, PlayCard):
+            if action.card.name == "Blob World":
+                if action.abilities[0].ability == CardAbility.COMBAT:
+                    action.apply(game, game.player1)
+
+    # Check combat increase
+    assert game.player1.combat == 7 
+
+    # Place blob world back in hand
+    game.player1.hand.append(game.player1.play_area.pop())
+
+    # Play blob world combat ability
+    actions = game.get_valid_actions(game.player1)
+    for action in actions:
+        if isinstance(action, PlayCard):
+            if action.card.name == "Blob World":
+                if action.abilities[0].ability == CardAbility.BLOBWORLD_DRAW:
+                    action.apply(game, game.player1)
+                    pass
+
+    # Check that hand now contains 3 scouts
+    assert len(game.player1.hand) == 3 
+    assert game.player1.hand[0].name == "Scout"
+    assert game.player1.hand[1].name == "Scout"
+    assert game.player1.hand[2].name == "Scout"
+
+
+

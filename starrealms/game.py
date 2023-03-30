@@ -2,7 +2,7 @@ import random
 import typing as tp
 
 from starrealms.action import AcquireShip, AllyAbility, ScrapCard, EndTurn, PlayCard, BuyCard, PlayCardScrapTraderow, ScrapTraderow, DestroyBase
-from starrealms.card import Card, CardType, CardFaction, CardAbility, Explorer, new, create_blob_deck
+from starrealms.card import Card, CardType, CardFaction, CardAbility, Ability, ChoiceAbility, Explorer, new, create_blob_deck
 from starrealms.player import Player
 
 PLAYER1_STARTING_CARDS = 3
@@ -96,15 +96,19 @@ class Game:
 
         # Add hand play card actions
         for card in player.hand:
-            actions.append(PlayCard(card))
+            if isinstance(card.abilities[0], ChoiceAbility): 
+                for ability in card.abilities[0].abilities:
+                    actions.append(PlayCard(card, [ability]))
+            else:
+                actions.append(PlayCard(card, card.abilities))
 
         # Check if a hand PlayCard action has a SCRAP_TRADEROW ability
         # In this case we need to expand the PlayCard action
         # into additional PlayCardTradRowScrapActions
         for action in actions:
             if isinstance(action, PlayCard):
-                for ability in action.card.abilities:
-                    if ability.ability == CardAbility.SCRAP_TRADEROW:
+                for ability in action.abilities:
+                    if isinstance(ability, Ability) and ability.ability == CardAbility.SCRAP_TRADEROW:
                         for traderow_card in self.trade_row:
                             if traderow_card.name != "Explorer":
                                 actions.append(PlayCardScrapTraderow(action, traderow_card))
@@ -118,38 +122,42 @@ class Game:
             # Add ally abilities actions for cards in play
             if card.ally_abilities and faction_counts[card.faction] > 1:
                 for ability in card.ally_abilities: 
-                    if not ability.played:
-                        actions.append(AllyAbility(card))
-
+                    if not ability.is_used():
+                        actions.append(AllyAbility(card, ability))
+        
         for action in actions:
             if isinstance(action, AllyAbility):
-                for ability in action.card.ally_abilities:
                     # For all SCRAP_TRADEROW abilities in ally abilities, 
                     # append a ScrapTraderow action
-                    if ability.ability == CardAbility.SCRAP_TRADEROW:
+                    if action.ability.ability == CardAbility.SCRAP_TRADEROW:
                         for traderow_card in self.trade_row:
                             # Cannot trash explorers
                             if traderow_card.name != "Explorer":
                                 actions.append(ScrapTraderow(action, traderow_card))
                     # For all ACQUIRE_SHIP abilities in ally abilities, 
                     # append a AcquireShip action
-                    if ability.ability == CardAbility.ACQUIRE_SHIP:
+                    if action.ability.ability == CardAbility.ACQUIRE_SHIP:
                         for traderow_card in self.trade_row:
                             actions.append(AcquireShip(action, traderow_card))
+                    # For all DESTROY_BASE abilities
+                    if action.ability.ability == CardAbility.DESTROY_BASE:
+                        for opponent_card in self.opponent.play_area:
+                            actions.append(DestroyBase(opponent_card,action.card))
         # Remove AllyAbility actions with AcquireShip abilities
         actions = [action for action in actions if not (isinstance(action, AllyAbility) and any(ability.ability == CardAbility.ACQUIRE_SHIP for ability in action.card.ally_abilities))]
 
 
-        # Check if an action has the DESTROY_BASE ability
-        # We need to add DestroyBase actions to the list for every opponent base
-        #for action in actions:
-        #    if hasattr(action, "card"):
-        #        for ability in action.card.abilities:
-        #            if ability.ability == CardAbility.DESTROY_BASE:
-        #                # For every opponent in play card check if it is of type base
-        #                for opponent_card in self.opponent.in_play:
-        #                    if opponent_card.type == CardType.BASE:
-        #                        actions.append(DestroyBase(action, opponent_card))
+        # Check if opponents has an outpost in play
+        if any(card.name == "Outpost" for card in self.opponent.play_area):
+            #for card in self.opponent.play_area:
+            #    if card.type == CardType.OUTPOST and card.shield <= player.combat:
+            #        actions.append(DestroyBase(card))
+            pass
+        else:
+            # Add DestroyBase actions for bases that are within reach of combat points
+            for card in self.opponent.play_area:
+                if card.type == CardType.BASE and card.shield <= player.combat:
+                    actions.append(DestroyBase(card))
 
         actions.append((EndTurn()))
 

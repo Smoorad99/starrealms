@@ -15,18 +15,21 @@ class Action:
 
 
 class PlayCard(Action):
-    def __init__(self, card):
+    def __init__(self, card, abilities=None):
         self.card = card
+        # If abilities are not specified, use all abilities on card
+        self.abilities = abilities if abilities else card.abilities
 
     def apply(self, game, player):
         player.hand.remove(self.card)
         player.play_area.append(self.card)
+        player.faction_played[self.card.faction.value] += 1
 
-        for ability in self.card.abilities:
+        for ability in self.abilities:
             ability.use(game, player)
 
     def __str__(self) -> str:
-        return f"PlayCard({self.card})"
+        return f"PlayCard({self.card}: {self.abilities})"
 
 class ScrapTraderow(Action):
     def __init__(self, action, traderow_card):
@@ -39,8 +42,8 @@ class ScrapTraderow(Action):
         game.scrap_pile.append(card)
         game.draw_traderow_cards(1)
 
-    #def __str__(self) -> str:
-    #    return f"ScrapTraderow({self.action}-{self.action.card}: {self.traderow_card})"
+    def __str__(self) -> str:
+        return f"ScrapTraderow({self.action}-{self.action.card}: {self.traderow_card})"
 
 
 # Special action for cards that can scrap trade row cards in their main ability
@@ -53,6 +56,7 @@ class PlayCardScrapTraderow(Action):
     def apply(self, game, player):
         player.hand.remove(self.action.card)
         player.play_area.append(self.action.card)
+        player.faction_played[self.action.card.faction.value] += 1
 
         for ability in self.action.card.abilities:
             ability.use(game, player)
@@ -83,16 +87,21 @@ class AcquireShip(Action):
 
 
 class DestroyBase(Action):
-    def __init__(self, card, base_card):
+    def __init__(self, base_card, card=None):
         self.card = card
         self.base = base_card
 
     def apply(self, game, player):
-        game.opponent.bases.remove(self.base)
-        game.opponent.discard(self.base)
+        game.opponent.play_area.remove(self.base)
+        game.opponent.discard.append(self.base)
+
+        if not self.card:
+            player.combat -= self.base.shield
+
+        
 
     def __str__(self) -> str:
-        return f"DestroyBase({self.card()}: {self.base()})"
+        return f"DestroyBase({self.card}: {self.base})"
 
 
 class BuyCard(Action):
@@ -131,23 +140,23 @@ class ScrapCard(Action):
 
 
 class DrawCard(Action):
-    def __init__(self, card):
-        self.card = card
+    def __init__(self, no_cards):
+        self.no_cards = no_cards
 
     def apply(self, game, player):
-        player.draw_cards(1)
+        player.draw_cards(self.no_cards)
 
     def __str__(self) -> str:
-        return f"DrawCard({self.card()})"
+        return f"DrawCard({self.no_cards})"
 
 
 class AllyAbility(Action):
-    def __init__(self, card):
+    def __init__(self, card, ability):
         self.card = card
+        self.ability = ability
 
     def apply(self, game, player):
-        for ability in self.card.ally_abilities:
-            ability.use(game, player)
+        self.ability.use(game, player)
 
     def __str__(self) -> str:
         return f"AllyAbilitty({self.card}-{self.card.ally_abilities})"

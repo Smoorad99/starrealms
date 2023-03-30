@@ -1,7 +1,10 @@
 import typing as tp
-from starrealms.card import CardFaction, CardAbility
+from starrealms.card import CardFaction, CardAbility, Ability
 
 def render_card(card):
+    if card == None:
+        return "None"
+
     string = card.name
 
     if card.faction == CardFaction.NEUTRAL:
@@ -14,41 +17,45 @@ def render_card(card):
     # Render abilities 
     string += " ("
     if card.abilities:
+        # FIXME: update and cleanup
         for ability in card.abilities:
-            if ability.ability == CardAbility.COMBAT:
-                string += f"\033[1m\033[91m{ability.value}\033[0m, "
-            if ability.ability == CardAbility.TRADE:
-                string += f"\033[1m\033[93m{ability.value}\033[0m, "
-            if ability.ability == CardAbility.DRAW_CARD:
-                string += f"\033[1m\033[97mdraw {ability.value}\033[0m, "
-            if ability.ability == CardAbility.AUTHORITY:
-                string += f"\033[1m\033[92m{ability.value}\033[0m, "
+            if isinstance(ability, Ability):
+                if ability.ability == CardAbility.COMBAT:
+                    string += f"\033[1m\033[91m{ability.value}\033[0m, "
+                if ability.ability == CardAbility.TRADE:
+                    string += f"\033[1m\033[93m{ability.value}\033[0m, "
+                if ability.ability == CardAbility.DRAW_CARD:
+                    string += f"\033[1m\033[97mdraw {ability.value}\033[0m, "
+                if ability.ability == CardAbility.AUTHORITY:
+                    string += f"\033[1m\033[92m{ability.value}\033[0m, "
 
     # Render ally abilities
     string = string[:-2] +"| "
     if card.ally_abilities:
         # Render ally abilities in [ally1, ally2, ...]
         for ability in card.ally_abilities:
-            if ability.ability == CardAbility.COMBAT:
-                string += f"\033[1m\033[91m{ability.value}\033[0m, "
-            if ability.ability == CardAbility.TRADE:
-                string += f"\033[1m\033[93m{ability.value}\033[0m, "
-            if ability.ability == CardAbility.DRAW_CARD:
-                string += f"\033[1m\033[97mdraw {ability.value}\033[0m, "
-            if ability.ability == CardAbility.AUTHORITY:
-                string += f"\033[1m\033[92m{ability.value}\033[0m, "
+            if isinstance(ability, Ability):
+                if ability.ability == CardAbility.COMBAT:
+                    string += f"\033[1m\033[91m{ability.value}\033[0m, "
+                if ability.ability == CardAbility.TRADE:
+                    string += f"\033[1m\033[93m{ability.value}\033[0m, "
+                if ability.ability == CardAbility.DRAW_CARD:
+                    string += f"\033[1m\033[97mdraw {ability.value}\033[0m, "
+                if ability.ability == CardAbility.AUTHORITY:
+                    string += f"\033[1m\033[92m{ability.value}\033[0m, "
     # Render scrap abilities
     string = string[:-2] +"| "
     if card.scrap_abilities:
         for ability in card.scrap_abilities:
-            if ability.ability == CardAbility.COMBAT:
-                string += f"\033[1m\033[91m{ability.value}\033[0m, "
-            if ability.ability == CardAbility.TRADE:
-                string += f"\033[1m\033[93m{ability.value}\033[0m, "
-            if ability.ability == CardAbility.DRAW_CARD:
-                string += f"\033[1m\033[97mdraw {ability.value}\033[0m, "
-            if ability.ability == CardAbility.AUTHORITY:
-                string += f"\033[1m\033[92m{ability.value}\033[0m, "
+            if isinstance(ability, Ability):
+                if ability.ability == CardAbility.COMBAT:
+                    string += f"\033[1m\033[91m{ability.value}\033[0m, "
+                if ability.ability == CardAbility.TRADE:
+                    string += f"\033[1m\033[93m{ability.value}\033[0m, "
+                if ability.ability == CardAbility.DRAW_CARD:
+                    string += f"\033[1m\033[97mdraw {ability.value}\033[0m, "
+                if ability.ability == CardAbility.AUTHORITY:
+                    string += f"\033[1m\033[92m{ability.value}\033[0m, "
     string = string[:-2] + ")"
 
     # TODO: handle bases and outposts

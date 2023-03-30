@@ -6,9 +6,10 @@ from starrealms.tests.fixtures import game, player1, player2
 
 def test_play_card(game):
     """Test play card action"""
+    game.player1.start_turn()
     game.player1.hand = [new(Viper)]
 
-    PlayCard(game.player1.hand[0]).apply(game, game.player1)
+    PlayCard(game.player1.hand[0], game.player1.hand[0].abilities).apply(game, game.player1)
 
     assert len(game.player1.play_area) == 1
     assert game.player1.play_area[0].name == "Viper"
@@ -91,6 +92,7 @@ def test_scrap_card_explorer(game):
 
 def test_PlayCardScrapTraderow(game):
     """Test that a card that scrapes the trade row is removed from the trade row"""
+    game.player1.start_turn()
     game.trade_row = [new(Explorer), new(TradePod), new(BattlePod)]
     game.player1.hand = [new(BattlePod)]
 
