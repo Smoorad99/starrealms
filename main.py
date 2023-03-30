@@ -1,11 +1,12 @@
 from agents.agents import HumanAgent, RandomAgent
+from agents.llm_agent import GPTChatAgent 
 from starrealms.game import Game
 from starrealms.player import Player
 
 if __name__ == "__main__":
     player1 = Player("Player", HumanAgent())
-    player2 = Player("Ran Doe", RandomAgent())
-    #player2 = Player("GPT", GPTChatAgent())
+    #player2 = Player("Ran Doe", RandomAgent())
+    player2 = Player("GPT", GPTChatAgent())
     game = Game(player1, player2)
     print("Starting Game")
     game.play()
@@ -13,11 +14,7 @@ if __name__ == "__main__":
     # Print out winner in upper case bold green
     print(f"\033[1m\033[92m{winner.name.upper()} WINS!\033[0m")
 
-# TODO: Cleanup GPT agents
 # TODO: Provide opponent move list to agent
-# TODO: Provide information on every card to the agent
-# TODO: Add cards
 # TODO: Implement destroy outpost 
 # TODO: store a log of the entire game
-# FIXME: Scraptraderow might be broken
-
+# FIXME: A bug where bases are not remaining in play

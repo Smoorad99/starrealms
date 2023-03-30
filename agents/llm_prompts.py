@@ -9,7 +9,7 @@ You will then select an action to perform.
 To select an action, only return the index of the action (action_index) as an integer.
 
 Additional to the action index, you should also return the reason for your choice.
-Your reasoning should be a short concise and logical.
+Your reason should be a single short sentence in the tone of a smack talking cowboy.
 
 Your response should be in the following format:
 action_index reason

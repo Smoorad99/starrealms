@@ -132,6 +132,15 @@ def render_action(action):
     if action.__class__.__name__ == "PlayCardScrapTraderow":
         string += f" scrapping {render_card(action.traderow_card)} using {render_card(action.action.card)}"
 
+    # Render the traderow card that will be scrapped as well as the card
+    # responsible for this action
+    if action.__class__.__name__ == "ScrapTraderow":
+        string += f" scrapping {render_card(action.traderow_card)} using {render_card(action.action.card)}"
+
+    # Render the AcquireShip action 
+    if action.__class__.__name__ == "AcquireShip":
+        string += f" {render_card(action.traderow_card)} using {render_card(action.action.card)}"
+
 
     return string
 

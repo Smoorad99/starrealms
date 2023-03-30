@@ -6,6 +6,7 @@ from agents.agent import Agent
 from starrealms.card import CardFaction
 from starrealms.interface import render, render_action
 from agents.llm_prompts import preprompt, card_info_prompt
+import os
 
 class GPTAgent(Agent):
     def __init__(self):
@@ -154,6 +155,8 @@ class GPTChatAgent(Agent):
                 action_prompt += f" Acquire {action.traderow_card} from the traderow and put ontop of your deck using {action.action.card.name}"
             elif action.__class__.__name__ == "ScrapTraderow":
                 action_prompt += f" Scrap {action.traderow_card} from the traderow using {action.action.card.name} in play area"
+            elif action.__class__.__name__ == "DestroyBase":
+                action_prompt += f" Destroy opponent base {action.base} using {action.card.name}"
             elif action.__class__.__name__ == "EndTurn":
                 action_prompt += f" End Turn"
             else:

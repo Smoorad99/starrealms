@@ -41,6 +41,8 @@ class ScrapTraderow(Action):
         card = game.trade_row.pop(game.trade_row.index(self.traderow_card))
         game.scrap_pile.append(card)
         game.draw_traderow_cards(1)
+        self.action.ability.ability.used = True
+        
 
     def __str__(self) -> str:
         return f"ScrapTraderow({self.action}-{self.action.card}: {self.traderow_card})"
@@ -81,6 +83,7 @@ class AcquireShip(Action):
         # The card should be the first card to be drawn when calling pop
         player.deck.insert(0, self.traderow_card)
         game.draw_traderow_cards(1)
+        self.action.ability.used = True
 
     def __str__(self) -> str:
         return f"AcquireShip({self.action}: {self.traderow_card})"
